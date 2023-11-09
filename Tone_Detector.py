@@ -41,8 +41,6 @@ def find_harmonies(freq, fft_spectrum, sample_rate):
 
     return notes
 
-# Modified function to detect the note or harmonies of a single WAV file
-
 
 def detect_note_in_wav(file_path):
     # Read the wav file
