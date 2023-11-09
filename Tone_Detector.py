@@ -21,7 +21,27 @@ def frequency_to_note(frequency):
     n = h % 12
     return note_names[n] + str(octave)
 
-# Function to detect the note of a single WAV file
+# Function to find harmonies (up to two notes) in a single WAV file
+
+
+def find_harmonies(freq, fft_spectrum, sample_rate):
+    # Find peaks in the FFT magnitude
+    magnitude = np.abs(fft_spectrum)
+    peaks, _ = find_peaks(magnitude, height=np.max(magnitude)/10, distance=20)
+
+    # Sort peaks by magnitude
+    peaks = sorted(peaks, key=lambda peak: magnitude[peak], reverse=True)
+
+    # Get frequencies for the peaks
+    peak_freqs = freq[peaks]
+
+    # Convert to notes
+    # Taking the first two peaks as the harmonies
+    notes = [frequency_to_note(abs(f)) for f in peak_freqs[:2]]
+
+    return notes
+
+# Modified function to detect the note or harmonies of a single WAV file
 
 
 def detect_note_in_wav(file_path):
@@ -41,19 +61,27 @@ def detect_note_in_wav(file_path):
     peaks, _ = find_peaks(y, height=np.max(y)/4)
     peak_freq = freq[peaks][np.argmax(y[peaks])]
 
-    # Convert peak frequency to musical note
-    note = frequency_to_note(abs(peak_freq))
-    return note
+    # Detect harmonies (up to two notes)
+    notes = find_harmonies(freq, fft_spectrum, sample_rate)
 
-# Function to process all WAV files in the directory
+    # Convert peak frequency to musical note
+    main_note = frequency_to_note(abs(peak_freq))
+
+    # If we have more than one note detected, return them as harmonies
+    if len(notes) > 1 and main_note not in notes:
+        return notes
+    else:
+        return [main_note]
+
+# Function to process all WAV files in the directory and detect notes or harmonies
 
 
 def process_wav_files(directory):
     for filename in os.listdir(directory):
         if filename.endswith(".wav"):
             file_path = os.path.join(directory, filename)
-            note = detect_note_in_wav(file_path)
-            print(f"File: {filename}, Note: {note}")
+            notes = detect_note_in_wav(file_path)
+            print(f"File: {filename}, Notes: {notes}")
 
 
 # Assuming your wav files are stored in a folder named 'wav_files'
